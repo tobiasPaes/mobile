@@ -1,182 +1,213 @@
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:cotacoes/wigets/cardBolsa.dart';
+import 'package:cotacoes/wigets/cardMoeda.dart';
+import 'package:cotacoes/wigets/cardMoedaItem.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const HomePage());
+  runApp(const MyApp());
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TelaCalculadora(),
+      theme: ThemeData.dark(useMaterial3: true),
+      home: const HomeMaterial(),
     );
   }
 }
 
-class TelaCalculadora extends StatefulWidget {
-  const TelaCalculadora({super.key});
+/*
+class HomeMaterial extends StatelessWidget {
+  const HomeMaterial({super.key});
 
   @override
-  State<TelaCalculadora> createState() {
-    return _StateTelaCalculadora();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Cotações Brasil',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // main card
+            CardMoeda(
+                nomeMoeda: 'Euro',
+                valorMoeda: 'R\$5,1',
+                variacaoMoeda: '+10,00'),
+            SizedBox(height: 20),
+            Text(
+              'Outras moedas',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  CardMoedaItem(
+                    nomeMoeda: 'Dollar',
+                    valorMoeda: 'R\$4.999',
+                    variacaoMoeda: '+2,00',
+                  ),
+                  CardMoedaItem(
+                    nomeMoeda: 'Dollar',
+                    valorMoeda: 'R\$4.999',
+                    variacaoMoeda: '+2,00',
+                  ),
+                  CardMoedaItem(
+                    nomeMoeda: 'Dollar',
+                    valorMoeda: 'R\$4.999',
+                    variacaoMoeda: '+2,00',
+                  ),
+                  CardMoedaItem(
+                    nomeMoeda: 'Dollar',
+                    valorMoeda: 'R\$4.999',
+                    variacaoMoeda: '+2,00',
+                  ),
+                  CardMoedaItem(
+                    nomeMoeda: 'Dollar',
+                    valorMoeda: 'R\$4.999',
+                    variacaoMoeda: '+2,00',
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Bolsa de Valores',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                CardBolsa(
+                  nomebolsa: 'IBOVESPA',
+                  local: 'Sao Paulo, Brasil',
+                  valor: '1.69',
+                ),
+                CardBolsa(
+                  nomebolsa: 'IBOVESPA',
+                  local: 'Sao Paulo, Brasil',
+                  valor: '1.69',
+                ),
+                CardBolsa(
+                  nomebolsa: 'IBOVESPA',
+                  local: 'Sao Paulo, Brasil',
+                  valor: '1.69',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
+*/
 
-class _StateTelaCalculadora extends State<TelaCalculadora> {
-  int valorx = 0;
-  int valory = 0;
-  int resultadoCalc = 0;
+class HomeMaterial extends StatefulWidget {
+  const HomeMaterial({super.key});
 
-  void _setResultado() {
-    setState(() {
-      resultadoCalc = valorx + valory;
-    });
+  @override
+  State<HomeMaterial> createState() => _HomeMaterialState();
+}
+
+class _HomeMaterialState extends State<HomeMaterial> {
+  late Future<Map<String, dynamic>> dadosCotacoes;
+
+  @override
+  void initState() {
+    super.initState();
+    dadosCotacoes = getDadosCotacoes();
   }
 
-  Future<void> _navigateTelaPreenche(BuildContext context, String valor) async {
-    // Navigator.push returns a Future that completes after calling
-    // Navigator.pop on the Selection Screen.
-    final result = await Navigator.push(
-      context,
-      // Create the SelectionScreen in the next step.
-      MaterialPageRoute(builder: (context) => TelaPreenche(varName: valor)),
-    );
-
-    if (!mounted) return;
-    if (valor == "X") {
-      if (result != null) {
-        setState(() {
-          valorx = result;
-        });
-      }
-    }
-    if (valor == "Y") {
-      if (result != null) {
-        setState(() {
-          valory = result;
-        });
-      }
-    }
-
-    ScaffoldMessenger.of(context)
-      ..removeCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('$result'),
+  Future<Map<String, dynamic>> getDadosCotacoes() async {
+    print("get dados");
+    try {
+      final res = await http.get(
+        Uri.parse(
+          'https://api.hgbrasil.com/finance/quotations?key=0d586d8a',
         ),
       );
+
+      if (res.statusCode != HttpStatus.ok) {
+        throw 'Erro de conexão';
+      }
+
+      final data = jsonDecode(res.body);
+
+      print(data);
+
+      return data;
+    } catch (e) {
+      throw e.toString();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Calculadora"),
+        title: const Text(
+          'Cotações Brasil',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
-      body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(valorx.toString()),
-            TextButton(
-              onPressed: () => _navigateTelaPreenche(context, "X"),
-              style: TextButton.styleFrom(
-                  backgroundColor: Colors.blueGrey.shade400,
-                  minimumSize: const Size(150, 50)),
-              child: const Text(
-                "Informar X",
-                style: TextStyle(color: Colors.white),
-              ),
-            )
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(valory.toString()),
-            TextButton(
-              onPressed: () => _navigateTelaPreenche(context, "Y"),
-              style: TextButton.styleFrom(
-                  backgroundColor: Colors.blueGrey.shade400,
-                  minimumSize: const Size(150, 50)),
-              child: const Text(
-                "Informar Y",
-                style: TextStyle(color: Colors.white),
-              ),
-            )
-          ],
-        ),
-        const SizedBox(height: 20),
-        TextButton(
-          onPressed: () => _setResultado(),
-          style: TextButton.styleFrom(
-            backgroundColor: Colors.blueGrey.shade400,
-            minimumSize: const Size(150, 50),
-          ),
-          child: const Text(
-            "Calcular",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Text(resultadoCalc.toString())
-      ]),
-    );
-  }
-}
+      body: FutureBuilder(
+          future: dadosCotacoes,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator.adaptive(),
+              );
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(snapshot.error.toString()),
+              );
+            }
+            final data = snapshot.data!;
 
-class TelaPreenche extends StatelessWidget {
-  const TelaPreenche({super.key, required this.varName});
-
-  final String varName;
-
-  @override
-  Widget build(BuildContext context) {
-    //final varName = ModalRoute.of(context)!.settings.arguments as String;
-
-    TextEditingController input = TextEditingController();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Preenche Valores"),
-      ),
-      body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Text("Set $varName:"),
-            SizedBox(
-              width: 300,
-              child: TextField(
-                controller: input,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: "Digite um valor",
-                  hintStyle: TextStyle(color: Colors.black),
-                  fillColor: Colors.white,
-                  filled: true,
-                ),
-              ),
-            )
-          ],
-        ),
-        const SizedBox(height: 20),
-        TextButton(
-          onPressed: () => Navigator.pop(context, int.parse(input.value.text)),
-          style: TextButton.styleFrom(
-            backgroundColor: Colors.blueGrey.shade400,
-            minimumSize: const Size(150, 50),
-          ),
-          child: const Text(
-            "Ok",
-            style: TextStyle(color: Colors.white),
-          ),
-        )
-      ]),
+            return Text("Dados lidos");
+          }),
     );
   }
 }
